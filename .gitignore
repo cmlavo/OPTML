@@ -2,12 +2,11 @@
 /data/*
 /output/*
 # debatable whether we want to store a model's weights in the repo or not
-/models/*
+#/models/*
 
 # Allow the listed directories themselves to be tracked
-!/data/
-!/output/
-!/models/
+!/output/images
+#!/models/
 !/data/.gitkeep
 !/output/.gitkeep
 !/models/.gitkeep
