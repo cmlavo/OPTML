@@ -85,7 +85,7 @@ def train_with_adversarial_scheduler(model, train_loader, test_loader, optimizer
         total = 0
 
         # Call the scheduler to get the distribution of k values for the current epoch.
-        k_distribution = adversarial_scheduler(epoch, num_epochs)
+        _, k_distribution = adversarial_scheduler(epoch, num_epochs)
 
         for images, labels in train_loader:
             images, labels = images.to(device), labels.to(device)
