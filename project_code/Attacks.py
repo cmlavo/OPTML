@@ -1,4 +1,6 @@
 import torch
+from torchattacks import PGD
+
 
 """
 This script implements adversarial attacks
@@ -55,7 +57,7 @@ def fgsm_attack(image, label, model, loss_fun, epsilon, device):
     return adversarial_image, perturbation
 
 
-def pgd_attack(images, labels, model, loss_fun, epsilon, k, device):
+def pgd_attack2(images, labels, model, loss_fun, epsilon, k, device):
     """
     Somewhat naive/intuitive implementation of the Projected Gradient Descent attack.
     Would be good to check other codebases to make sure this is how it's done.
@@ -80,3 +82,27 @@ def pgd_attack(images, labels, model, loss_fun, epsilon, k, device):
         images, current_perturbation = fgsm_attack(images, labels, model, loss_fun, mini_epsilon, device)
         total_perturbation += current_perturbation
     return images, total_perturbation
+
+
+
+
+def pgd_attack(images, labels, model, loss_fun, epsilon, k, device):
+    if k == 0:
+        return images, torch.zeros_like(images)
+    alpha = epsilon / k
+
+    # Ensure model and inputs are on the correct device
+    model.to(device)
+    images = images.to(device)
+    labels = labels.to(device)
+
+    # Create the PGD attacker instance
+    attack = PGD(model, eps=epsilon, alpha=alpha, steps=k)
+    
+    # Optionally set loss function (if torchattacks supports it)
+    #attack.set_loss(loss_fun)
+
+    # Generate adversarial examples
+    adv_images = attack(images, labels)
+
+    return adv_images, adv_images - images

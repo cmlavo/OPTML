@@ -38,7 +38,7 @@ def evaluate_model(model, test_loader, criterion, device):
     return test_loss, test_acc
 
 
-def run_all_k_strategies(k_min=0, k_max=5, epsilon=0.3, num_epochs=6, device=None):
+def run_all_k_strategies(k_min=0, k_max=20, epsilon=0.3, num_epochs=10, device=None):
     if device is None:
         device = "cuda" if torch.cuda.is_available() else "cpu"
     train_loader, test_loader = get_data_loaders()
@@ -135,9 +135,9 @@ def evaluate_strategies_on_attacks(model_dict, test_loader, device, epsilon=0.3,
 
 
 def main():
-    run_all_k_strategies()
+    run_all_k_strategies(device = "mps")
     # Evaluation phase
-    device = "cuda" if torch.cuda.is_available() else "cpu"
+    device = "cuda" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available() else "cpu"
     _, test_loader = get_data_loaders()
     strategies = ["Constant", "Linear", "LinearUniformMix", "Exponential", "Cyclic", "Random"]
     model_dict = load_models(strategies, device)
