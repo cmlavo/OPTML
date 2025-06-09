@@ -53,11 +53,12 @@ class BaseScheduler:
 
 
 class ConstantScheduler(BaseScheduler):
-    """Always returns constant k = k_min."""
-    def __init__(self, k_min: int, epsilon_max: float = 0.3):
-        super().__init__(k_min, k_min, epsilon_max)
+    """Always returns constant k = k_max."""
+    #def __init__(self, k_max: int, epsilon_max: float = 0.3):
+    #    super().__init__(k_max, k_max, epsilon_max)
+    #    print(self.k_min, self.k_max)
     def _get_k_distribution(self, epoch, max_epochs):
-        return {self.k_min: 1.0}
+        return {self.k_max: 1.0}
 
 
 class LinearScheduler(BaseScheduler):
@@ -101,15 +102,40 @@ class ExponentialScheduler(BaseScheduler):
         return {k: 1.0}
 
 
+"""
 class CyclicScheduler(BaseScheduler):
-    """ k oscillates cosinusoidally k_min→k_max→k_min.
+    '''k oscillates cosinusoidally k_min to k_max to k_min.
       The cosine function is used to create a smooth transition between k_min and k_max.
-      """
+      '''
     def _get_k_distribution(self, epoch, max_epochs):
         cosv = math.pi * epoch / max_epochs
         frac = (1 + math.cos(cosv)) / 2  # 1→0
         k = self.k_min + frac * (self.k_max - self.k_min)
         return {round(k): 1.0}
+"""
+
+
+# Fix issues of old one
+class CyclicScheduler(BaseScheduler):
+    """
+    k oscillates cosinusoidally between k_min and k_max.
+    Starts at k_min. Completes `cycles` full oscillations over max_epochs.
+    """
+    def __init__(self, k_min, k_max, cycles=2):
+        super().__init__(k_min, k_max)
+        self.cycles = cycles
+
+    def _get_k_distribution(self, epoch, max_epochs):
+        # Phase shift by pi to start at k_min
+        cosv = 2 * math.pi * self.cycles * epoch / max_epochs + math.pi
+        frac = (1 + math.cos(cosv)) / 2  # smoothly oscillates in [0,1]
+        k = self.k_min + frac * (self.k_max - self.k_min)
+        round_k = round(k)
+        if round_k == self.k_max:
+            return {round_k: 1/2, round_k - 1: 1/2}
+        if round_k == self.k_min:
+            return {round_k: 1/2, round_k + 1: 1/2}
+        return {round_k: 1/3, round_k + 1: 1/3, round_k - 1: 1/3}
 
 
 class RandomScheduler(BaseScheduler):
@@ -177,6 +203,14 @@ class CompositeScheduler:
 # --- Unit tests ---
 if __name__ == '__main__':
     max_epochs = 10
+
+    """
+    #sched = ConstantScheduler(0, 15)
+    sched = RandomScheduler(0, 15)
+    for epoch in range(max_epochs):
+        print(sched._get_k_distribution(epoch, max_epochs))
+    assert False
+    """
 
     print("=== Testing K Schedulers ===")
     # 1) ConstantScheduler

@@ -96,6 +96,10 @@ def train_with_adversarial_scheduler(model, train_loader, test_loader, optimizer
             k_values = list(k_distribution.keys())
             probs = list(k_distribution.values())
             sampled_k = random.choices(k_values, weights=probs, k=1)[0]
+
+            #print(adversarial_scheduler)
+            #print("Epoch ", epoch)
+            #print("k ", sampled_k)
             
             # Generate adversarial image
             images, perturbations = Attacks.pgd_attack(images, labels, model, criterion, epsilon, sampled_k, device)
