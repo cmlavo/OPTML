@@ -61,56 +61,39 @@ def results_to_png(
         suffix = f"_{suffix}"
     else:
         suffix = ""
-    data = cm.tab20(np_matrix/n_classes)
-    data_vanilla = data[:,:,:3].copy()
+    hue_map = np.linspace(0, 1, n_classes, endpoint=False)
+    shape = np_matrix.shape
 
-    if max_value_hsv is not None:
-        data_vanilla = rgb2hsv(data_vanilla)
+    # Vanilla image: HSV with unique hue per class, S=confidence, V=1
+    data_vanilla = np.zeros((*shape, 3))
+    print("prob_matrix min:", prob_matrix.min(), "max:", prob_matrix.max(), "mean:", prob_matrix.mean())
+    for i, hue in enumerate(hue_map):
+        mask = (np_matrix == i)
+        data_vanilla[mask, 0] = hue
+        data_vanilla[mask, 1] = prob_matrix[mask]
+        data_vanilla[mask, 2] = prob_matrix[mask]
+
+    if max_value_hsv is not None:        
         data_vanilla[:, :, 2] = max_value_hsv
-        data_vanilla = hsv2rgb(data_vanilla)
     
     if real_points is not None:
-        data_vanilla = rgb2hsv(data_vanilla)
-        print(len(data_vanilla[real_points[:, 0], real_points[:, 1], 2]))
+        data_vanilla[real_points[:, 0], real_points[:, 1], 1] = 0
         data_vanilla[real_points[:, 0], real_points[:, 1], 2] = 1
-        data_vanilla = hsv2rgb(data_vanilla)
 
     if adversarial_points is not None:
-    #if False:
-        data_vanilla = rgb2hsv(data_vanilla)
-        print(len(data_vanilla[adversarial_points[:, 0], adversarial_points[:, 1], 2]))
-        data_vanilla[adversarial_points[:, 0], adversarial_points[:, 1], 2] = 0
-        #data_vanilla[adversarial_points[:, 0], adversarial_points[:, 1], 0] = 0.0
-        data_vanilla = hsv2rgb(data_vanilla)
+        data_vanilla[adversarial_points[:, 0], adversarial_points[:, 1], 1] = 0    
+        data_vanilla[adversarial_points[:, 0], adversarial_points[:, 1], 2] = 0        
     
-    data_alpha = data.copy()
-
-    data_hsv = data[:,:,:3].copy()
-    data_alpha[:,:,3] = prob_matrix
-
-    data_hsv = rgb2hsv(data_hsv)
-    data_hsv[:,:,2] = prob_matrix
-    data_hsv = hsv2rgb(data_hsv)
-
-    rescaled_vanilla = (data_vanilla*255.0).astype(np.uint8)
+    data_vanilla_rgb = hsv2rgb(data_vanilla)
+    rescaled_vanilla = (data_vanilla_rgb*255.0).astype(np.uint8)
     im_vanilla = Image.fromarray(rescaled_vanilla)
-    print(f"Saving vanilla. {grid_size}x{grid_size} - {dataset_name} - {classifier_name}")
-    im_vanilla.save(os.path.join(output_dir,f"{classifier_name}_{grid_size}x{grid_size}_{dataset_name}_vanilla{suffix}.png"))
-
-    rescaled_alpha = (255.0*data_alpha).astype(np.uint8)
-    im_alpha = Image.fromarray(rescaled_alpha)
-    print(f"Saving alpha. {grid_size}x{grid_size} - {dataset_name} - {classifier_name}")
-    im_alpha.save(os.path.join(output_dir,f"{classifier_name}_{grid_size}x{grid_size}_{dataset_name}_alpha{suffix}.png"))
-
-    rescaled_hsv = (255.0*data_hsv).astype(np.uint8)
-    im_hsv = Image.fromarray(rescaled_hsv)
-    print(f"Saving hsv. {grid_size}x{grid_size} - {dataset_name} - {classifier_name}")
-    im_hsv.save(os.path.join(output_dir,f"{classifier_name}_{grid_size}x{grid_size}_{dataset_name}_hsv{suffix}.png"))
+    print(f"Saving image. {grid_size}x{grid_size} - {dataset_name} - {classifier_name}")
+    im_vanilla.save(os.path.join(output_dir,f"{classifier_name}_{grid_size}x{grid_size}_{dataset_name}_{suffix}.png"))
 
     # Add a legend for the colors and labels
     legend_elements = [
-        Patch(facecolor=cm.tab20(i / n_classes)[:3], label=f"{i}")
-        for i in range(n_classes)
+        Patch(facecolor=hsv2rgb([[[hue, 1.0, 1.0]]])[0, 0], label=f"{i}")
+        for i, hue in enumerate(hue_map)
     ]
 
     # Create a figure for the legend
@@ -121,17 +104,17 @@ def results_to_png(
     plt.tight_layout()
     plt.show()
     
-    return im_vanilla, im_alpha, im_hsv
+    return im_vanilla
 
 # SSNP model class
 # Code adapted from: https://github.com/mespadoto/ssnp/blob/main/code/ssnp.py
 class SSNP():
     
-    def __init__(self, init_labels='precomputed', epochs=100,
+    def __init__(self, init_labels='precomputed', epochs=200,
             input_l1=0.0, input_l2=0.0, bottleneck_l1=0.0,
             bottleneck_l2=0.5, verbose=1, opt='adam',
             bottleneck_activation='tanh', act='relu',
-            init='glorot_uniform', bias=0.0001, patience=3,
+            init='glorot_uniform', bias=0.0001, patience=20,
             min_delta=0.01):
         self.init_labels = init_labels
         self.epochs = epochs
@@ -168,6 +151,7 @@ class SSNP():
 
         self.model.compile(optimizer=self.opt,
                     loss={'main_output': 'categorical_crossentropy', 'decoder_output': 'binary_crossentropy'},
+                    loss_weights={'main_output': 1.0, 'decoder_output': 2.0},
                     metrics=['accuracy', 'mse'])
         
         model = self.model
@@ -180,7 +164,9 @@ class SSNP():
         encoded_input = Input(shape=(2,))
         l = model.get_layer('enc1')(encoded_input)
         l = model.get_layer('enc2')(l)
+        l = model.get_layer('enc_extra1')(l)  # Add this line
         l = model.get_layer('enc3')(l)
+        l = model.get_layer('enc_extra2')(l)  # Add this line
         decoder_layer = model.get_layer('decoder_output')(l)
 
         self.inv = Model(encoded_input, decoder_layer)
@@ -220,8 +206,9 @@ class SSNP():
 
         x = Dense(32, activation=self.act, kernel_initializer=self.init, name='enc1', bias_initializer=Constant(self.bias))(encoded)
         x = Dense(128, activation=self.act, kernel_initializer=self.init, name='enc2', bias_initializer=Constant(self.bias))(x)
+        x = Dense(256, activation=self.act, kernel_initializer=self.init, name='enc_extra1', bias_initializer=Constant(self.bias))(x)  # NEW
         x = Dense(512, activation=self.act, kernel_initializer=self.init, name='enc3', bias_initializer=Constant(self.bias))(x)
-
+        x = Dense(512, activation=self.act, kernel_initializer=self.init, name='enc_extra2', bias_initializer=Constant(self.bias))(x)  # NEW
         n_classes = len(np.unique(y))
         
         if n_classes == 2:
@@ -271,7 +258,9 @@ class SSNP():
         encoded_input = Input(shape=(2,))
         l = model.get_layer('enc1')(encoded_input)
         l = model.get_layer('enc2')(l)
+        l = model.get_layer('enc_extra1')(l)  # NEW
         l = model.get_layer('enc3')(l)
+        l = model.get_layer('enc_extra2')(l)  # NEW
         decoder_layer = model.get_layer('decoder_output')(l)
 
         self.inv = Model(encoded_input, decoder_layer)
@@ -309,7 +298,7 @@ def visualize_decision_boundaries(
         ssnp_path_and_name: str,        
         image_output_path: str = "../output/images",
         image_grid_size: int = 300,
-        batch_size: int = 100000,
+        batch_size: int = 100,
         adversarial_images: torch.Tensor = None,
         ssnp_training_epochs: int = 50,
         ssnp_training_patience: int = 10,
@@ -326,7 +315,7 @@ def visualize_decision_boundaries(
         dataset_name (str): A name given to the original dataset.
         classifier_model (nn.Module): The classification model for which to produce decision boundaries.
         classifier_model_name (str): A name given to the classification model.
-        ssnp_path_and_name (str): The path (relative to the cwd) and name (without the file extension) of the SSNP.
+        ssnp_path_and_name (str): The path (relative to the cwd) and name (with the file extension) of the SSNP.
             dimensionality reduction model. If the path and name already exist, the SSNP is imported from
             this path, otherwise it is trained from scratch and saved at the path.
         image_output_path (str): Location to which the images produced by the visualization should be saved, relative
@@ -441,8 +430,9 @@ def visualize_decision_boundaries(
     else:
         two_dim_projected_x = two_dim_projected_original_x
 
+    if verbose: print(f"Processing {len(two_dim_projected_x)} points for 2D projection...")
     ### 2D GRID SPACE ###
-
+    
     # get min and max coordinates of the projected data
     scaler = MinMaxScaler()
     scaler.fit(two_dim_projected_x)
@@ -450,7 +440,7 @@ def visualize_decision_boundaries(
     xmax = np.max(two_dim_projected_x[:, 0])
     ymin = np.min(two_dim_projected_x[:, 1])
     ymax = np.max(two_dim_projected_x[:, 1])
-
+    
     # initialize 2D arrays for the class and probability predictions
     img_grid = np.zeros((image_grid_size,image_grid_size))
     prob_grid = np.zeros((image_grid_size,image_grid_size))
@@ -465,14 +455,15 @@ def visualize_decision_boundaries(
     pts = cartesian((x_intrvls, y_intrvls))
     pts_grid = cartesian((x_grid, y_grid))
     pts_grid = pts_grid.astype(int)
-
+    print(f"pts: {pts}")
+    print(f"x, y intervals: {x_intrvls}, {y_intrvls}")
     # normalize the projected images to fit the grid
     scaler.fit(two_dim_projected_x)
     normalized_two_dim_original_x = scaler.transform(two_dim_projected_original_x)
     normalized_two_dim_original_x = normalized_two_dim_original_x.astype('float32')
     normalized_two_dim_original_x *= (image_grid_size-1)
     normalized_two_dim_original_x = normalized_two_dim_original_x.astype(int)
-
+    
     if adversarial_images is not None:
         normalized_two_dim_adversarial_x = scaler.transform(two_dim_projected_adversarial_x)
         normalized_two_dim_adversarial_x = normalized_two_dim_adversarial_x.astype('float32')
@@ -491,6 +482,9 @@ def visualize_decision_boundaries(
         # transform the points from 2D to original image space using inverse SSNP
         with tf.device(device_tf):
             image_batch = ssnp.inverse_transform(pts_batch)
+            if position == 0:
+                print(f"Point at position zero: {pts_batch[0]}")
+                plt.imshow(torch.tensor(image_batch[0]).view(28, 28).cpu(), cmap='gray')
 
         # predict the labels for synthetic points using the classifier
         with torch.no_grad():
@@ -529,7 +523,7 @@ def visualize_decision_boundaries(
     n_classes = len(np.unique(y))
 
     # Generate image from the predictions
-    im_vanilla, im_alpha, im_hsv = results_to_png(
+    image = results_to_png(
         np_matrix=img_grid,
         prob_matrix=prob_grid,
         grid_size=image_grid_size,
@@ -542,23 +536,12 @@ def visualize_decision_boundaries(
     
     # print the images to the terminal
     if verbose:
-        # Display the images in a row with labels
-        fig, axes = plt.subplots(1, 3, figsize=(15, 5))  # Create 1 row and 3 columns of subplots
-
-        # Titles for the images
-        titles = ["Vanilla", "Alpha", "HSV"]
-
-        # Images to display
-        images = [im_vanilla, im_alpha, im_hsv]
-
-        # Loop through the images and axes
-        for ax, img, title in zip(axes, images, titles):
-            ax.imshow(img)  # Display the image
-            ax.set_title(title)  # Set the title
-            ax.axis('off')  # Turn off the axis
+        fig, ax = plt.subplots(figsize=(8,8)) 
+        ax.imshow(image)  # Display the image
+        ax.axis('off')  # Turn off the axis
 
         # Adjust layout and show the plot
         plt.tight_layout()
         plt.show()
 
-    return ssnp, img_grid, prob_grid
+    return ssnp, img_grid, prob_grid, image, pts

@@ -3,6 +3,7 @@
 /output/*
 # debatable whether we want to store a model's weights in the repo or not
 #/models/*
+tokens.txt
 
 # Allow the listed directories themselves to be tracked
 !/output/images
