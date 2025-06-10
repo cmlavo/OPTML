@@ -66,7 +66,7 @@ def results_to_png(
 
     # Vanilla image: HSV with unique hue per class, S=confidence, V=1
     data_vanilla = np.zeros((*shape, 3))
-    print("prob_matrix min:", prob_matrix.min(), "max:", prob_matrix.max(), "mean:", prob_matrix.mean())
+    #print("prob_matrix min:", prob_matrix.min(), "max:", prob_matrix.max(), "mean:", prob_matrix.mean())
     for i, hue in enumerate(hue_map):
         mask = (np_matrix == i)
         data_vanilla[mask, 0] = hue
@@ -396,7 +396,7 @@ def visualize_decision_boundaries(
     else: raise ValueError("Invalid device specified. Choose from ['gpu', 'mps', 'cpu'].")
 
     # check if the SSNP model already exists at given path
-    ssnp_model_dir = ssnp_path_and_name + ".keras"
+    ssnp_model_dir = ssnp_path_and_name
     if os.path.exists(ssnp_model_dir): # load the model from preexisting path
         ssnp = SSNP(
                 epochs=ssnp_training_epochs, 
@@ -482,9 +482,9 @@ def visualize_decision_boundaries(
         # transform the points from 2D to original image space using inverse SSNP
         with tf.device(device_tf):
             image_batch = ssnp.inverse_transform(pts_batch)
-            if position == 0:
-                print(f"Point at position zero: {pts_batch[0]}")
-                plt.imshow(torch.tensor(image_batch[0]).view(28, 28).cpu(), cmap='gray')
+            #if position == 0:
+                #print(f"Point at position zero: {pts_batch[0]}")
+                #plt.imshow(torch.tensor(image_batch[0]).view(28, 28).cpu(), cmap='gray')
 
         # predict the labels for synthetic points using the classifier
         with torch.no_grad():
