@@ -455,8 +455,6 @@ def visualize_decision_boundaries(
     pts = cartesian((x_intrvls, y_intrvls))
     pts_grid = cartesian((x_grid, y_grid))
     pts_grid = pts_grid.astype(int)
-    print(f"pts: {pts}")
-    print(f"x, y intervals: {x_intrvls}, {y_intrvls}")
     # normalize the projected images to fit the grid
     scaler.fit(two_dim_projected_x)
     normalized_two_dim_original_x = scaler.transform(two_dim_projected_original_x)
