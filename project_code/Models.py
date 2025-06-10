@@ -44,10 +44,11 @@ class ConvNet(nn.Module):
         x = self.fc2(x)  # logits, no softmax
 
         return x
+    
 # Medium ConvNet for MNIST
 class MediumConvNet(nn.Module):
-    def _init_(self):
-        super(MediumConvNet, self)._init_()
+    def __init__(self):
+        super(MediumConvNet, self).__init__()
 
         self.conv1 = nn.Conv2d(1, 32, kernel_size=3, padding=1)  # 28x28
         self.conv2 = nn.Conv2d(32, 64, kernel_size=3, padding=1)  # 14x14
