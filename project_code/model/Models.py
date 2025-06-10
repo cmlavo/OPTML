@@ -104,4 +104,33 @@ class SmallConvNet(nn.Module):
         x = self.fc2(x)  # logits, no softmax
 
         return x
-    
+
+class MediumConvNetCIFAR(nn.Module):
+    """Medium ConvNet adapted for CIFAR-10 (3 channels, 32x32 images)"""
+    def __init__(self):
+        super(MediumConvNetCIFAR, self).__init__()
+
+        self.conv1 = nn.Conv2d(3, 64, kernel_size=3, padding=1)  # 32x32
+        self.conv2 = nn.Conv2d(64, 128, kernel_size=3, padding=1)  # 16x16
+        self.conv3 = nn.Conv2d(128, 256, kernel_size=3, padding=1)  # 8x8
+        self.conv4 = nn.Conv2d(256, 512, kernel_size=3, padding=1)  # 4x4
+
+        self.fc1 = nn.Linear(512 * 2 * 2, 256)
+        self.fc2 = nn.Linear(256, 128)
+        self.fc3 = nn.Linear(128, 10)
+
+        self.pool = nn.MaxPool2d(2, 2)
+        self.dropout = nn.Dropout(0.5)
+
+    def forward(self, x):
+        x = self.pool(F.relu(self.conv1(x)))  # 32x32 -> 16x16
+        x = self.pool(F.relu(self.conv2(x)))  # 16x16 -> 8x8
+        x = self.pool(F.relu(self.conv3(x)))  # 8x8 -> 4x4
+        x = self.pool(F.relu(self.conv4(x)))  # 4x4 -> 2x2
+
+        x = x.view(x.size(0), -1)
+        x = self.dropout(F.relu(self.fc1(x)))
+        x = self.dropout(F.relu(self.fc2(x)))
+        x = self.fc3(x)
+
+        return x

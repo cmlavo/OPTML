@@ -28,7 +28,7 @@ import torch.nn.functional as F
 from torchvision import datasets, transforms
 
 import torch.nn as nn
-import Models
+import project_code.model.Models as Models
 
 import os
 import numpy as np
