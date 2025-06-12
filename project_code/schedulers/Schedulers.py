@@ -121,8 +121,8 @@ class CyclicScheduler(BaseScheduler):
     k oscillates cosinusoidally between k_min and k_max.
     Starts at k_min. Completes `cycles` full oscillations over max_epochs.
     """
-    def __init__(self, k_min, k_max, cycles=2):
-        super().__init__(k_min, k_max)
+    def __init__(self, k_min, k_max, cycles=2, epsilon_max=0.3):
+        super().__init__(k_min, k_max, epsilon_max)
         self.cycles = cycles
 
     def _get_k_distribution(self, epoch, max_epochs):
@@ -224,7 +224,7 @@ if __name__ == '__main__':
 
     print("=== Testing K Schedulers ===")
     # 1) ConstantScheduler
-    cs = ConstantScheduler(2)
+    cs = ConstantScheduler(1, 2)  # Fix: provide both k_min and k_max
     expected_eps_cs = cs.epsilon_max
     expected_k_cs = 2
     for e in [0, 5, 10]:
