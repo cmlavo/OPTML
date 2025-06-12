@@ -297,11 +297,13 @@ def visualize_decision_boundaries(
         classifier_model_name: str,
         ssnp_path_and_name: str,        
         image_output_path: str = "../output/images",
+        image_name_suffix: str = None,
         image_grid_size: int = 300,
         batch_size: int = 100,
         adversarial_images: torch.Tensor = None,
         ssnp_training_epochs: int = 50,
         ssnp_training_patience: int = 10,
+        show_points: bool = False,
         device: str = "cpu",
         verbose: bool = False,
 )-> tuple[SSNP, np.ndarray, np.ndarray] :
@@ -320,6 +322,7 @@ def visualize_decision_boundaries(
             this path, otherwise it is trained from scratch and saved at the path.
         image_output_path (str): Location to which the images produced by the visualization should be saved, relative
             to the cwd. Defaults to "../output/images".
+        image_name_suffix (str): A suffix to append to the image file names, for example "_adversarial". Defaults to None.
         image_grid_size (int): The width and height of the decision boundary visualization square, in pixels.
             Image created is of size image_grid_size x image_grid_size. Defaults to 300.
         batch_size (int): The maximum number of images to project from the 2D grid space to the image space at a time.
@@ -329,6 +332,7 @@ def visualize_decision_boundaries(
         ssnp_training_epochs (int): The maximum number of epochs to train the SSNP model. Defaults to 50.
         ssnp_training_patience (int): The number of epochs which the SSNP training will wait without performance
             improvements before stopping prematurely. None defaults to 10.
+        show_points (bool): Whether to show the original and adversarial points on the decision boundary visualization.
         device (str): The device on which to perform all the tensor operations. Accepts ["gpu", "mps", "cpu"]. 
             Defaults to "cpu".
         verbose (bool): Whether to print status updates and the final images to the terminal. Defaults to False.
@@ -521,16 +525,28 @@ def visualize_decision_boundaries(
     n_classes = len(np.unique(y))
 
     # Generate image from the predictions
-    image = results_to_png(
-        np_matrix=img_grid,
-        prob_matrix=prob_grid,
-        grid_size=image_grid_size,
-        dataset_name=dataset_name,
-        classifier_name=classifier_model_name,
-        output_dir=image_output_path,
-        real_points=normalized_two_dim_original_x,
-        adversarial_points=normalized_two_dim_adversarial_x,
-        n_classes=n_classes)
+    if show_points:        
+        image = results_to_png(
+            np_matrix=img_grid,
+            prob_matrix=prob_grid,
+            grid_size=image_grid_size,
+            dataset_name=dataset_name,
+            classifier_name=classifier_model_name,
+            output_dir=image_output_path,
+            real_points=normalized_two_dim_original_x,
+            adversarial_points=normalized_two_dim_adversarial_x,
+            n_classes=n_classes,
+            suffix=image_name_suffix)
+    else:
+        image = results_to_png(
+            np_matrix=img_grid,
+            prob_matrix=prob_grid,
+            grid_size=image_grid_size,
+            dataset_name=dataset_name,
+            classifier_name=classifier_model_name,
+            output_dir=image_output_path,
+            n_classes=n_classes,
+            suffix=image_name_suffix)
     
     # print the images to the terminal
     if verbose:
