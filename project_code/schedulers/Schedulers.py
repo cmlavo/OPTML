@@ -25,7 +25,10 @@ Its only for the CompositeScheduler that we need to define the epsilon strategy.
 import math
 import random
 
-# TODO: Implement the schedulers in the main
+def uniform(min_val, max_val):
+        ks = list(range(min_val, max_val + 1))
+        prob = 1.0/len(ks)
+        return {k: prob for k in ks}
 
 class BaseScheduler:
     """
@@ -138,6 +141,21 @@ class CyclicScheduler(BaseScheduler):
         return {round_k: 1/3, round_k + 1: 1/3, round_k - 1: 1/3}
 
 
+class CyclicUniformMixScheduler(BaseScheduler):
+
+    def __init__(self, k_min, k_max, cycles=2.5):
+        super().__init__(k_min, k_max)
+        self.cycles = cycles
+
+    def _get_k_distribution(self, epoch, max_epochs):
+        # Phase shift by pi to start at k_min
+        cosv = 2 * math.pi * self.cycles * epoch / max_epochs + math.pi
+        frac = (1 + math.cos(cosv)) / 2  # smoothly oscillates in [0,1]
+        k = self.k_min + frac * (self.k_max - self.k_min)
+        round_k = round(k)
+        return uniform(self.k_min, round_k)
+
+
 class RandomScheduler(BaseScheduler):
     """k uniformly random in [k_min..k_max] each call.
     This is not a real scheduler, but a random sampling of k values.
@@ -204,6 +222,40 @@ class CompositeScheduler:
         _, k_dist = self.k_scheduler(epoch, max_epochs)
         return eps, k_dist
 
+
+def plot(scheduler, epochs, n_samples_per_epoch, sched_name = None):
+    from matplotlib import pyplot as plt
+    import random
+    import numpy as np # Import numpy for linspace for better tick control
+
+    epoch_ks = {}
+    for epoch in range(epochs):
+        _, dist = scheduler(epoch, epochs)
+        probs = list(dist.values())
+        k_values = list(dist.keys())
+        sampled_k = random.choices(k_values, weights=probs, k = n_samples_per_epoch)
+        epoch_ks[epoch] = sampled_k
+
+    # Plotting
+    plt.figure(figsize=(10, 6)) # Adjust figure size as needed
+    for epoch, ks in epoch_ks.items():
+        # Normalize the epoch value for the x-axis
+        # We divide by (epochs - 1) to map the range [0, epochs-1] to [0, 1]
+        normalized_epoch = epoch / (epochs - 1) if epochs > 1 else 0 # Handle case with single epoch
+        
+        plt.scatter([normalized_epoch] * len(ks), ks, alpha=0.6, s=50) 
+
+    plt.xlabel("Normalized Epoch (0 to 1)") # Changed x-axis label
+    plt.ylabel("k values")
+    plt.title(f"{sched_name}: sampled k values per Epoch")
+    plt.grid(True, linestyle='--', alpha=0.7) # Add a grid for better readability
+    
+    # Set x-axis ticks to be between 0 and 1
+    plt.xticks(np.linspace(0, 1, 6)) # Example: ticks at 0.0, 0.2, 0.4, 0.6, 0.8, 1.0
+    plt.xlim(-0.05, 1.05) # Add a small buffer around the 0-1 range for visual appeal
+    
+    plt.tight_layout() # Adjust layout to prevent labels from overlapping
+    plt.show()
 
 
 
