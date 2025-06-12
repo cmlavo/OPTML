@@ -1,21 +1,28 @@
+import sys
+import os
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../..')))
+
 import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
 from torchvision import datasets, transforms
-import project_code.model.Models as Models, Defences, project_code.schedulers.Schedulers as Schedulers
+import project_code.model.Models as Models
+import project_code.Defences as Defences
+import project_code.schedulers.Schedulers as Schedulers
 import pandas as pd
-import os
 import numpy as np
-from Attacks import pgd_attack
+from project_code.Attacks import pgd_attack
 import torch.nn.functional as F
 
 
-def get_data_loaders(batch_size=64):
+def get_data_loaders(batch_size=16):
+    print("Loading MNIST data...")
     transform = transforms.ToTensor()
-    train_dataset = datasets.MNIST(root="../data", train=True, download=True, transform=transform)
-    test_dataset = datasets.MNIST(root="../data", train=False, download=True, transform=transform)
+    train_dataset = datasets.MNIST(root="../../project_code/data", train=True, download=True, transform=transform)
+    test_dataset = datasets.MNIST(root="../../project_code/data", train=False, download=True, transform=transform)
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
     test_loader = DataLoader(test_dataset, batch_size=1000, shuffle=False)
+    print("MNIST data loaded.")
     return train_loader, test_loader
 
 
@@ -38,12 +45,13 @@ def evaluate_model(model, test_loader, criterion, device):
     return test_loss, test_acc
 
 
-def run_all_k_strategies(k_min=0, k_max=20, epsilon=0.3, num_epochs=10, device=None):
+def run_all_k_strategies(k_min=0, k_max=20, epsilon=0.3, num_epochs=2, device=None):
     if device is None:
         device = "cuda" if torch.cuda.is_available() else "cpu"
     train_loader, test_loader = get_data_loaders()
     results = []
     schedulers = {
+        "Vanilla": Schedulers.VanillaScheduler(),
         "Constant": Schedulers.ConstantScheduler(k_min, k_max),
         "Linear": Schedulers.LinearScheduler(k_min, k_max),
         "LinearUniformMix": Schedulers.LinearUniformMixScheduler(k_min, k_max),
@@ -135,14 +143,14 @@ def evaluate_strategies_on_attacks(model_dict, test_loader, device, epsilon=0.3,
 
 
 def main():
-    run_all_k_strategies(device = "mps")
+    run_all_k_strategies(device = "cpu")
     # Evaluation phase
-    device = "cuda" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available() else "cpu"
+    device = "cuda" if torch.cuda.is_available() else "cpu"
     _, test_loader = get_data_loaders()
-    strategies = ["Constant", "Linear", "LinearUniformMix", "Exponential", "Cyclic", "Random"]
+    strategies = ["Vanilla", "Constant", "Linear", "LinearUniformMix", "Exponential", "Cyclic", "Random"]
     model_dict = load_models(strategies, device)
     evaluate_strategies_on_attacks(model_dict, test_loader, device)
 
 
 if __name__ == "__main__":
-    main() 
+    main()

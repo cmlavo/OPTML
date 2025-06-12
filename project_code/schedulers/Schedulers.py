@@ -54,9 +54,9 @@ class BaseScheduler:
 
 class ConstantScheduler(BaseScheduler):
     """Always returns constant k = k_max."""
-    #def __init__(self, k_max: int, epsilon_max: float = 0.3):
-    #    super().__init__(k_max, k_max, epsilon_max)
-    #    print(self.k_min, self.k_max)
+    def __init__(self, k_min: int, k_max: int, epsilon_max: float = 0.3):
+        super().__init__(k_min, k_max, epsilon_max)
+        
     def _get_k_distribution(self, epoch, max_epochs):
         return {self.k_max: 1.0}
 
@@ -147,6 +147,16 @@ class RandomScheduler(BaseScheduler):
         prob = 1/len(ks)
         return {k: prob for k in ks}
 
+
+class VanillaScheduler(BaseScheduler):
+    """Vanilla (non-adversarial) training baseline - returns k=0 (no adversarial examples)."""
+    def __init__(self, epsilon_max: float = 0.0):
+        # For vanilla training, we set k_min=k_max=0 and epsilon=0
+        super().__init__(k_min=0, k_max=0, epsilon_max=epsilon_max)
+        
+    def _get_k_distribution(self, epoch, max_epochs):
+        # Always return k=0 for vanilla training (no adversarial examples)
+        return {0: 1.0}
 
 
 """

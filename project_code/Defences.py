@@ -1,6 +1,6 @@
 import torch
 import random
-import Attacks
+from project_code import Attacks
 
 """
 This script implements functions to train our models under adversarial attacks.

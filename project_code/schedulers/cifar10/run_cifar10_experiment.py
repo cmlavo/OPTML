@@ -1,17 +1,22 @@
+import sys
+import os
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../..')))
+
 import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
 from torchvision import datasets, transforms
-import project_code.model.Models as Models, Defences, project_code.schedulers.Schedulers as Schedulers
+import project_code.model.Models as Models
+import project_code.Defences as Defences
+import project_code.schedulers.Schedulers as Schedulers
 import pandas as pd
-import os
 import numpy as np
-from Attacks import pgd_attack
+from project_code.Attacks import pgd_attack
 import torch.nn.functional as F
 
 
-def get_cifar10_data_loaders(batch_size=64):
-    """Get CIFAR-10 data loaders with appropriate transforms"""
+def get_cifar10_data_loaders(batch_size=16):
+    print("Loading CIFAR-10 data...")
     # CIFAR-10 specific transforms
     transform_train = transforms.Compose([
         transforms.RandomCrop(32, padding=4),
@@ -25,12 +30,12 @@ def get_cifar10_data_loaders(batch_size=64):
         transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010))
     ])
     
-    train_dataset = datasets.CIFAR10(root="../data", train=True, download=True, transform=transform_train)
-    test_dataset = datasets.CIFAR10(root="../data", train=False, download=True, transform=transform_test)
+    train_dataset = datasets.CIFAR10(root="../../project_code/data", train=True, download=True, transform=transform_train)
+    test_dataset = datasets.CIFAR10(root="../../project_code/data", train=False, download=True, transform=transform_test)
     
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=2)
     test_loader = DataLoader(test_dataset, batch_size=1000, shuffle=False, num_workers=2)
-    
+    print("CIFAR-10 data loaded.")
     return train_loader, test_loader
 
 
@@ -53,15 +58,16 @@ def evaluate_model(model, test_loader, criterion, device):
     return test_loss, test_acc
 
 
-def run_all_k_strategies_cifar10(k_min=0, k_max=20, epsilon=8/255, num_epochs=15, device=None):
+def run_all_k_strategies_cifar10(k_min=0, k_max=20, epsilon=8/255, num_epochs=2, device=None):
     """Run K strategy experiments on CIFAR-10 with MediumConvNet"""
     if device is None:
-        device = "cuda" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available() else "cpu"
+        device = "cuda" if torch.cuda.is_available() else "cpu"
     
     train_loader, test_loader = get_cifar10_data_loaders()
     results = []
     
     schedulers = {
+        "Vanilla": Schedulers.VanillaScheduler(),
         "Constant": Schedulers.ConstantScheduler(k_min, k_max),
         "Linear": Schedulers.LinearScheduler(k_min, k_max),
         "LinearUniformMix": Schedulers.LinearUniformMixScheduler(k_min, k_max),
@@ -176,13 +182,13 @@ def main():
     print("Starting CIFAR-10 K-strategy experiments...")
     
     # Training phase
-    train_results = run_all_k_strategies_cifar10(device="mps")
+    train_results = run_all_k_strategies_cifar10(device="cpu")
     
     # Evaluation phase
-    device = "cuda" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available() else "cpu"
+    device = "cuda" if torch.cuda.is_available() else "cpu"
     _, test_loader = get_cifar10_data_loaders()
     
-    strategies = ["Constant", "Linear", "LinearUniformMix", "Exponential", "Cyclic", "Random"]
+    strategies = ["Vanilla", "Constant", "Linear", "LinearUniformMix", "Exponential", "Cyclic", "Random"]
     model_dict = load_cifar10_models(strategies, device)
     
     eval_results = evaluate_strategies_on_attacks_cifar10(model_dict, test_loader, device)
