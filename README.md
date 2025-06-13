@@ -1,2 +1,40 @@
 # OPTML
-Repo for the CS-439 mini-project
+
+This is the GitHub repository for the CS-439 Optimization for Machine Learning Mini-Project "Scheduling Adversarial Examples for Effective and Robust Learning".
+
+## Setup and Prerequisites
+
+Provided in this repo is an `environment.yml` file, which contains the Python Conda environment packages necessary for the proper execution of the code. The conda environment `OPTML_env` can be created by running the command:
+
+    conda env create -f environment.yml
+
+You will also need a HuggingFace access token with read permissions for the following repos:
+
+https://huggingface.co/JulienStal/MNIST-SmallConvs-AdversarialSchedulers
+
+https://huggingface.co/JulienStal/MNIST-MediumConvs-AdversarialSchedulers
+
+https://huggingface.co/cmlavo/SSNP
+
+## Repo Structure
+
+This repo has the following file structure:
+
+    ...
+
+Each file is briefly explained below:
+...
+
+## Running the Code
+
+This project contains two separate parts: training models with a specific adversarial learning schedule, and visualising the boundary decision maps (DBM) of a trained model.
+
+### Training performance script
+
+The model training script `...` is a Jupyter Notebook which trains a selected model using a specified scheduler object. It is currently configured to ...
+
+### DBM visualisation script
+
+The visualisation script `Visualization.ipynb` takes an MNIST-trained classification model from HuggingFace and produces the DBMs for that classification model, either with a HuggingFace-imported self-supervised network projection (SSNP) model, or a newly trained one. All the configuration parameters are in cell 2. It is currently configured to import all the classification models for the MediumConvNet from HuggingFace, import a trained SSNP model from HuggingFace for MNIST, and produce DBMs for all these models without the MNIST training points highlighted on the map.
+
+The last cell contains a small script for visualising a reconstruction of an MNIST image using the inverse projection algorithm. You can specify the pixel which you want to inverse project (`PIXEL_X` and `PIXEL_Y`) as well as the model for which you want to view the corresponding DBM and prediction (one entry from the `MODELS` list). 
