@@ -88,8 +88,8 @@ def run_all_k_strategies_cifar10(k_min=0, k_max=7, epsilon=1/255, num_epochs=15,
         # Linear LR scheduler: decays LR linearly to 0 over training
         Defences.train_with_adversarial_scheduler(
             model, train_loader, test_loader, optimizer, criterion,
-            epsilon, scheduler, device, num_epochs=num_epochs, test_eval_rate=3, 
-            sched_lr = True 
+            epsilon, scheduler, device, num_epochs=num_epochs, test_eval_rate=1, 
+            sched_lr = True, cli
         )
         
         test_loss, test_acc = evaluate_model(model, test_loader, criterion, device)
