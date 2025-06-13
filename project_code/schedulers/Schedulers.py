@@ -106,6 +106,7 @@ class ExponentialScheduler(BaseScheduler):
 
 
 """
+old one, has issues
 class CyclicScheduler(BaseScheduler):
     '''k oscillates cosinusoidally k_min to k_max to k_min.
       The cosine function is used to create a smooth transition between k_min and k_max.
@@ -265,10 +266,10 @@ def plot(scheduler, epochs, n_samples_per_epoch, sched_name = None, save_path = 
 
 
 
-"""chatgpt a fait les tests je vias devoir les verifs plus tards"""
 # --- Unit tests ---
 if __name__ == '__main__':
-    plot(CyclicUniformMixScheduler(k_min = 0, k_max = 7, epsilon_max = 0.1), 20, 10, "Cyclic Uniform", "test")
+    
+    plot(CyclicScheduler(k_min = 0, k_max = 7, epsilon_max = 0.1), 20, 10, "Cyclic Scheduler", "test")
 
     """
     #sched = ConstantScheduler(0, 15)
@@ -277,7 +278,7 @@ if __name__ == '__main__':
         print(sched._get_k_distribution(epoch, max_epochs))
     assert False
     """
-
+    """
     print("=== Testing K Schedulers ===")
     # 1) ConstantScheduler
     cs = ConstantScheduler(1, 2)  # Fix: provide both k_min and k_max
@@ -363,4 +364,4 @@ if __name__ == '__main__':
     print("Composite3 passed!\n")
 
     print("All tests successful!")
-
+    """
