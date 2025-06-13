@@ -31,7 +31,7 @@ This project contains two separate parts: training models with a specific advers
 
 ### Training performance script
 
-The model training script `project_code/run_scheduler_experiments.ipynb` is a Jupyter Notebook which trains a selected model using a specified scheduler object. It is currently configured to our MNIST training with the SmallConv model. The settings can be changed in the 2nd cell to try other setups.
+The model training script `project_code/run_scheduler_experiments.ipynb` is a Jupyter Notebook which trains a selected model using a specified scheduler object. It is currently configured to our MNIST training with the SmallConv model. The settings can be changed in the "Hyper-parameters" cell to try other setups.
 
 ### DBM visualisation script
 
