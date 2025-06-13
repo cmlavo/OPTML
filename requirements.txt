@@ -10,7 +10,6 @@ tqdm
 torch>=1.10
 torchvision
 torchattacks
-torchmodels
 
 tensorflow-cpu  
 
