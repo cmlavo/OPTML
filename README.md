@@ -1,45 +1,115 @@
 # Scheduling Adversarial Examples for Effective and Robust Learning
 
-This repository contains the implementation and experimental results for the CS-439 Optimization for Machine Learning Mini-Project investigating how different adversarial training schedules affect neural network performance on benchmark classification tasks (MNIST and CIFAR-10).
+<div align="center">
+
+![Python](https://img.shields.io/badge/python-3.8+-blue.svg)
+![PyTorch](https://img.shields.io/badge/PyTorch-1.9+-red.svg)
+![License](https://img.shields.io/badge/license-MIT-green.svg)
+![EPFL](https://img.shields.io/badge/EPFL-CS--439-orange.svg)
+
+*Investigating optimal adversarial training schedules for robust neural networks*
+
+</div>
+
+---
+
+## Table of Contents
+
+- [Overview](#overview)
+- [Key Contributions](#key-contributions)
+- [Quick Start](#quick-start)
+- [Methodology](#methodology)
+- [Results & Findings](#results--findings)
+- [Usage Guide](#usage-guide)
+- [Project Structure](#project-structure)
+- [Technical Details](#technical-details)
+- [Citation](#citation)
+
+---
+
+## Overview
+
+This repository contains the complete implementation and experimental results for the **CS-439 Optimization for Machine Learning Mini-Project** investigating how different adversarial training schedules affect neural network performance on benchmark classification tasks.
 
 **Authors:** Julien Stalhandske, Christophe Michaud-Lavoie, Hugues Louis Christophe  
-**Institution:** EPFL - École Polytechnique Fédérale de Lausanne
+**Institution:** EPFL - École Polytechnique Fédérale de Lausanne  
+**Year:** 2024
 
-## Abstract
+### Abstract
 
-This project investigates how different adversarial training schedules affect neural network performance on benchmark classification tasks (MNIST and CIFAR-10). Each schedule varies k, the number of gradient ascent steps used to generate adversarial examples during training. We evaluated six schedulers based on their impact on accuracy, runtime, and robustness to attacks, followed by a qualitative analysis of decision boundaries. Results highlight the importance of curriculum: exposing models to high k-diversity later in training is especially beneficial for smaller models prone to forgetting.
+This project investigates how different adversarial training schedules affect neural network performance on benchmark classification tasks (MNIST and CIFAR-10). Each schedule varies **k** (the number of gradient ascent steps used to generate adversarial examples during training). We evaluated **six schedulers** based on their impact on accuracy, runtime, and robustness to attacks, followed by a qualitative analysis of decision boundaries. 
 
-## Setup and Prerequisites
+**Key Finding:** Results highlight the importance of curriculum learning - exposing models to high k-diversity later in training is especially beneficial for smaller models prone to catastrophic forgetting.
+
+## Key Contributions
+
+<div align="center">
+
+| **6 Scheduler Types** | **2 Benchmark Datasets** | **Multiple Architectures** | **Comprehensive Analysis** |
+|:---------------------:|:-------------------------:|:---------------------------:|:--------------------------:|
+| Linear, Exponential, Cyclic, etc. | MNIST & CIFAR-10 | SmallConv, MediumConv, ResNet | Accuracy, Runtime, Robustness |
+
+</div>
+
+### Research Highlights
+
+- **Curriculum Learning Matters**: Progressive difficulty scheduling significantly outperforms random or constant approaches
+- **Efficiency Gains**: Exponential and Linear Uniform schedulers achieve 50% runtime reduction with minimal accuracy loss
+- **Decision Boundary Insights**: Novel visualization of adversarial training effects on model decision boundaries
+- **Scalability Analysis**: Larger models are less sensitive to specific scheduler choices
+- **Pitfall Identification**: Immediate exposure to hard examples often leads to training collapse
+
+---
+
+## Quick Start
 
 ### Environment Setup
 
-This repository includes an `environment.yml` file containing all necessary Python Conda environment packages. Create the conda environment by running:
-
 ```bash
+# Clone the repository
+git clone https://github.com/cmlavo/OPTML.git
+cd OPTML
+
+# Create conda environment
 conda env create -f environment.yml
 conda activate OPTML_env
-```
 
-Alternatively, you can use the provided `requirements.txt`:
-
-```bash
+# Or use pip
 pip install -r requirements.txt
 ```
 
-### HuggingFace Access
+### Run Experiments
 
-You will need a HuggingFace access token with read permissions for the following repositories:
+```bash
+# Launch main training experiments
+jupyter notebook project_code/run_scheduler_experiments.ipynb
+
+# Generate decision boundary visualizations
+jupyter notebook Visualization.ipynb
+
+# Create scheduler plots
+cd project_code/schedulers && python Schedulers.py
+```
+
+### HuggingFace Setup
+
+You'll need access tokens for our pre-trained models:
 
 - [MNIST-SmallConvs-AdversarialSchedulers](https://huggingface.co/JulienStal/MNIST-SmallConvs-AdversarialSchedulers)
 - [MNIST-MediumConvs-AdversarialSchedulers](https://huggingface.co/JulienStal/MNIST-MediumConvs-AdversarialSchedulers)
 - [SSNP Model](https://huggingface.co/cmlavo/SSNP)
 
-## Repository Structure
+---
+
+## Project Structure
+
+<details>
+<summary><b>Click to expand directory tree</b></summary>
 
 ```
 OPTML/
 ├── environment.yml              # Conda environment specification
-├── requirements.txt             # Python package requirements
+├── requirements.txt             # Python package requirements  
 ├── README.md                   # This file
 ├── LICENSE                     # Project license
 ├── data/                       # Dataset storage
@@ -60,6 +130,10 @@ OPTML/
     └── schedulers/                     # Scheduler implementations
         └── Schedulers.py               # All scheduler variants
 ```
+
+</details>
+
+---
 
 ## Methodology
 
