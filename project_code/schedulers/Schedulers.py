@@ -26,9 +26,9 @@ import math
 import random
 
 def uniform(min_val, max_val):
-        ks = list(range(min_val, max_val + 1))
-        prob = 1.0/len(ks)
-        return {k: prob for k in ks}
+    ks = list(range(min_val, max_val + 1))
+    prob = 1.0/len(ks)
+    return {k: prob for k in ks}
 
 class BaseScheduler:
     """
@@ -124,7 +124,7 @@ class CyclicScheduler(BaseScheduler):
     k oscillates cosinusoidally between k_min and k_max.
     Starts at k_min. Completes `cycles` full oscillations over max_epochs.
     """
-    def __init__(self, k_min, k_max, cycles=2, epsilon_max=0.3):
+    def __init__(self, k_min, k_max, cycles=2.5, epsilon_max=0.3):
         super().__init__(k_min, k_max, epsilon_max)
         self.cycles = cycles
 
@@ -143,8 +143,8 @@ class CyclicScheduler(BaseScheduler):
 
 class CyclicUniformMixScheduler(BaseScheduler):
 
-    def __init__(self, k_min, k_max, cycles=2.5):
-        super().__init__(k_min, k_max)
+    def __init__(self, k_min, k_max, cycles=2.5, epsilon_max = 0.3):
+        super().__init__(k_min, k_max, epsilon_max)
         self.cycles = cycles
 
     def _get_k_distribution(self, epoch, max_epochs):
@@ -152,6 +152,7 @@ class CyclicUniformMixScheduler(BaseScheduler):
         cosv = 2 * math.pi * self.cycles * epoch / max_epochs + math.pi
         frac = (1 + math.cos(cosv)) / 2  # smoothly oscillates in [0,1]
         k = self.k_min + frac * (self.k_max - self.k_min)
+        #print(k, frac)
         round_k = round(k)
         return uniform(self.k_min, round_k)
 
@@ -223,7 +224,7 @@ class CompositeScheduler:
         return eps, k_dist
 
 
-def plot(scheduler, epochs, n_samples_per_epoch, sched_name = None):
+def plot(scheduler, epochs, n_samples_per_epoch, sched_name = None, save_path = None):
     from matplotlib import pyplot as plt
     import random
     import numpy as np # Import numpy for linspace for better tick control
@@ -257,6 +258,9 @@ def plot(scheduler, epochs, n_samples_per_epoch, sched_name = None):
     plt.tight_layout() # Adjust layout to prevent labels from overlapping
     plt.show()
 
+    if save_path:
+        plt.savefig(save_path, dpi=300)
+
 
 
 
@@ -264,7 +268,7 @@ def plot(scheduler, epochs, n_samples_per_epoch, sched_name = None):
 """chatgpt a fait les tests je vias devoir les verifs plus tards"""
 # --- Unit tests ---
 if __name__ == '__main__':
-    max_epochs = 10
+    plot(CyclicUniformMixScheduler(k_min = 0, k_max = 7, epsilon_max = 0.1), 20, 10, "Cyclic Uniform", "test")
 
     """
     #sched = ConstantScheduler(0, 15)

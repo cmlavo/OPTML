@@ -1,5 +1,6 @@
 import torch
 import random
+from time import time
 try:
     import Attacks
 except: 
@@ -75,7 +76,7 @@ def train_vanilla(model, train_loader, test_loader, optimizer, criterion, device
         
 
 
-def train_with_adversarial_scheduler(model, train_loader, test_loader, optimizer, criterion, epsilon, adversarial_scheduler, device, num_epochs=6, test_eval_rate=1, sched_lr = False):
+def train_with_adversarial_scheduler(model, train_loader, test_loader, optimizer, criterion, epsilon, adversarial_scheduler, device, num_epochs=6, test_eval_rate=1, sched_lr = False, clip_norm = None):
     """
     Train a model using adversarial examples generated according to a dynamic scheduler.
     TODO: verify that the generated k behave correctly. This function was partly generated
@@ -83,7 +84,8 @@ def train_with_adversarial_scheduler(model, train_loader, test_loader, optimizer
     """
 
     lr_scheduler = torch.optim.lr_scheduler.LinearLR(optimizer, start_factor=1.0, end_factor=0, total_iters=num_epochs)    
-    
+
+    total_time = 0
     for epoch in range(num_epochs):
         model.train()
         running_loss = 0.0
@@ -93,6 +95,7 @@ def train_with_adversarial_scheduler(model, train_loader, test_loader, optimizer
         # Call the scheduler to get the distribution of k values for the current epoch.
         _, k_distribution = adversarial_scheduler(epoch, num_epochs)
 
+        start_time = time()
         for images, labels in train_loader:
             images, labels = images.to(device), labels.to(device)
 
@@ -115,6 +118,8 @@ def train_with_adversarial_scheduler(model, train_loader, test_loader, optimizer
             loss = criterion(outputs, labels)
 
             loss.backward()
+            if clip_norm:
+                torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=clip_norm)  # Clip gradients
             optimizer.step()
 
             running_loss += loss.item() * images.size(0)
@@ -122,6 +127,10 @@ def train_with_adversarial_scheduler(model, train_loader, test_loader, optimizer
             total += labels.size(0)
             correct += (predicted == labels).sum().item()
 
+        end_time = time()
+
+        total_time += end_time - start_time
+        
         train_loss = running_loss / total
         train_acc = 100.0 * correct / total
 
@@ -156,6 +165,7 @@ def train_with_adversarial_scheduler(model, train_loader, test_loader, optimizer
             test_loss /= test_total
             test_adv_loss /= test_adv_total
             test_acc = 100.0 * test_correct / test_total
+            #if test_acc < 20: assert False # REMOVE at the end
             test_adv_acc = 100.0 * test_adv_correct / test_adv_total
 
             print(f"Epoch {epoch+1}/{num_epochs} | "
@@ -165,3 +175,6 @@ def train_with_adversarial_scheduler(model, train_loader, test_loader, optimizer
             if sched_lr: print(f"Current LR: {optimizer.param_groups[0]['lr']:.6f}")
         else:
             print(f"Epoch {epoch+1}/{num_epochs} | Train Loss: {train_loss:.4f}, Train Acc: {train_acc:.2f}%")
+    minutes = int(total_time // 60)
+    seconds = total_time % 60
+    print(f"Training time (without eval): {minutes} min {seconds:.2f} sec")

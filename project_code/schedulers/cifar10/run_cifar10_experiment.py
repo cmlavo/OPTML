@@ -180,6 +180,8 @@ def evaluate_strategies_on_attacks_cifar10(model_dict, test_loader, device, epsi
 
 def main():
     print("Starting CIFAR-10 K-strategy experiments...")
+
+    assert False
     
     # Training phase
     train_results = run_all_k_strategies_cifar10(device="cpu")
