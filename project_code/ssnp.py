@@ -28,7 +28,7 @@ import torch.nn.functional as F
 from torchvision import datasets, transforms
 
 import torch.nn as nn
-import project_code.model.Models as Models
+import model.Models as Models
 
 import os
 import numpy as np
@@ -550,7 +550,7 @@ def visualize_decision_boundaries(
     
     # print the images to the terminal
     if verbose:
-        fig, ax = plt.subplots(figsize=(8,8)) 
+        fig, ax = plt.subplots(figsize=(4,4)) 
         ax.imshow(image)  # Display the image
         ax.axis('off')  # Turn off the axis
 
