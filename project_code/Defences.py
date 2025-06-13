@@ -79,8 +79,6 @@ def train_vanilla(model, train_loader, test_loader, optimizer, criterion, device
 def train_with_adversarial_scheduler(model, train_loader, test_loader, optimizer, criterion, epsilon, adversarial_scheduler, device, num_epochs=6, test_eval_rate=1, sched_lr = False, clip_norm = None):
     """
     Train a model using adversarial examples generated according to a dynamic scheduler.
-    TODO: verify that the generated k behave correctly. This function was partly generated
-    by ChatGPT, so we need to check if it behaves properly. Hadn't time to check it yet.
     """
 
     lr_scheduler = torch.optim.lr_scheduler.LinearLR(optimizer, start_factor=1.0, end_factor=0, total_iters=num_epochs)    
@@ -105,10 +103,6 @@ def train_with_adversarial_scheduler(model, train_loader, test_loader, optimizer
             k_values = list(k_distribution.keys())
             probs = list(k_distribution.values())
             sampled_k = random.choices(k_values, weights=probs, k=1)[0]
-
-            #print(adversarial_scheduler)
-            #print("Epoch ", epoch)
-            #print("k ", sampled_k)
             
             # Generate adversarial image
             images, perturbations = Attacks.pgd_attack(images, labels, model, criterion, epsilon, sampled_k, device)
