@@ -33,7 +33,7 @@ This repository contains the complete implementation and experimental results fo
 
 **Authors:** Julien Stalhandske, Christophe Michaud-Lavoie, Hugues Louis Christophe  
 **Institution:** EPFL - École Polytechnique Fédérale de Lausanne  
-**Year:** 2024
+**Year:** 2025
 
 ### Abstract
 
@@ -70,11 +70,7 @@ This project investigates how different adversarial training schedules affect ne
 git clone https://github.com/cmlavo/OPTML.git
 cd OPTML
 
-# Create conda environment
-conda env create -f environment.yml
-conda activate OPTML_env
-
-# Or use pip
+# Install requirements with pip
 pip install -r requirements.txt
 ```
 
@@ -108,7 +104,6 @@ You'll need access tokens for our pre-trained models:
 
 ```
 OPTML/
-├── environment.yml              # Conda environment specification
 ├── requirements.txt             # Python package requirements  
 ├── README.md                   # This file
 ├── LICENSE                     # Project license
@@ -350,12 +345,12 @@ Experiments in the paper were conducted on EPFL Gnoto server using one GPU.
 If you use this code in your research, please cite:
 
 ```bibtex
-@article{stalhandske2024scheduling,
+@article{stalhandske2025scheduling,
   title={Scheduling Adversarial Examples for Effective and Robust Learning},
   author={Stalhandske, Julien and Michaud-Lavoie, Christophe and Christophe, Hugues Louis},
   journal={CS-439 Optimization for Machine Learning Mini-Project},
   institution={EPFL},
-  year={2024}
+  year={2025}
 }
 ```
 
